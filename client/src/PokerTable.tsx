@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import type { Card, PublicSeat, PublicTableState } from "@shared/types";
 import { formatMoney } from "@shared/money";
+import { describeHandStrength } from "@shared/handeval";
 import { CardView } from "./Card";
 import type { DisplayUnit } from "./session";
 
@@ -105,6 +106,13 @@ export function PokerTable({
             ? yourCards
             : seat.holeCards;
 
+        // Hand strength description: only computable for the viewer (we know
+        // both their hole cards). Other seats' cards are hidden until showdown.
+        const handDescription =
+          isYou && yourCards.length === 2 && seat.inHand && !seat.hasFolded
+            ? describeHandStrength(yourCards, state.board)
+            : null;
+
         return (
           <Fragment key={seat.seatId}>
             <SeatNode
@@ -115,6 +123,7 @@ export function PokerTable({
               bigBlind={state.bigBlind}
               left={seatPos.left}
               top={seatPos.top}
+              handDescription={handDescription}
             />
             {seat.bet > 0 && (
               <BetChip
@@ -168,6 +177,7 @@ function SeatNode({
   bigBlind,
   left,
   top,
+  handDescription,
 }: {
   seat: PublicSeat;
   cards: (Card | null)[] | null;
@@ -176,6 +186,7 @@ function SeatNode({
   bigBlind: number;
   left: string;
   top: string;
+  handDescription?: string | null;
 }) {
   const empty = !seat.nickname;
   const showingCards = !!cards && (cards[0] !== undefined || cards[1] !== undefined);
@@ -266,6 +277,25 @@ function SeatNode({
         )}
       </div>
 
+      {handDescription && (
+        <div
+          style={{
+            marginTop: 4,
+            display: "inline-block",
+            background: "rgba(0,0,0,0.7)",
+            color: "#f1c40f",
+            padding: "2px 8px",
+            borderRadius: 10,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: 0.3,
+            textTransform: "uppercase",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+          }}
+        >
+          {handDescription}
+        </div>
+      )}
       {seat.hasFolded && renderCards !== "shown" && (
         <div style={{ marginTop: 4, fontSize: 11, fontStyle: "italic", color: "#888" }}>folded</div>
       )}

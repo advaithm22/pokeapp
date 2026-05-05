@@ -31,6 +31,33 @@ const RANK_NAME_PLURAL: Record<Rank, string> = {
   9: "Nines", 10: "Tens", 11: "Jacks", 12: "Queens", 13: "Kings", 14: "Aces",
 };
 
+/**
+ * Plain-English summary of a player's current hand for in-game UI.
+ *
+ * - Preflop (board empty, 2 hole cards): "Pocket Aces" / "Ace-King suited" /
+ *   "Ten-Seven offsuit". Useful before a 5-card eval is possible.
+ * - Flop or later (≥5 cards total): runs the full evaluator and returns its
+ *   description ("Pair of Kings", "Flush, Ace-high", "Royal Flush", etc.).
+ *
+ * Returns null if there aren't 2 hole cards yet.
+ */
+export function describeHandStrength(holeCards: Card[], board: Card[]): string | null {
+  if (holeCards.length < 2) return null;
+  const all = [...holeCards, ...board];
+  if (all.length >= 5) {
+    return evaluateHand(all).description;
+  }
+  const a = holeCards[0]!;
+  const b = holeCards[1]!;
+  if (a.rank === b.rank) {
+    return `Pocket ${RANK_NAME_PLURAL[a.rank]}`;
+  }
+  const high = a.rank > b.rank ? a : b;
+  const low = a.rank > b.rank ? b : a;
+  const suited = a.suit === b.suit;
+  return `${RANK_NAME_SINGULAR[high.rank]}-${RANK_NAME_SINGULAR[low.rank]} ${suited ? "suited" : "offsuit"}`;
+}
+
 function compareRanksDesc(a: number, b: number): number {
   return b - a;
 }

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { evaluateHand, compareHandRanks, HAND_CATEGORY } from "../shared/src/handeval.js";
+import {
+  compareHandRanks,
+  describeHandStrength,
+  evaluateHand,
+  HAND_CATEGORY,
+} from "../shared/src/handeval.js";
 import type { Card, Suit, Rank } from "../shared/src/types.js";
 
 function c(s: string): Card {
@@ -63,5 +68,35 @@ describe("hand evaluator", () => {
     const r = evaluateHand(hand("5h", "6h", "7h", "8h", "9h", "Ad", "Kc"));
     expect(r.category).toBe(HAND_CATEGORY.StraightFlush);
     expect(r.score[1]).toBe(9);
+  });
+});
+
+describe("describeHandStrength", () => {
+  it("returns null with fewer than 2 hole cards", () => {
+    expect(describeHandStrength([], [])).toBeNull();
+    expect(describeHandStrength(hand("Ah"), [])).toBeNull();
+  });
+
+  it("preflop pocket pair", () => {
+    expect(describeHandStrength(hand("Ah", "Ad"), [])).toBe("Pocket Aces");
+    expect(describeHandStrength(hand("7c", "7s"), [])).toBe("Pocket Sevens");
+  });
+
+  it("preflop suited / offsuit non-pair", () => {
+    expect(describeHandStrength(hand("Kh", "Th"), [])).toBe("King-Ten suited");
+    expect(describeHandStrength(hand("Ah", "Kc"), [])).toBe("Ace-King offsuit");
+    expect(describeHandStrength(hand("7s", "2c"), [])).toBe("Seven-Two offsuit");
+  });
+
+  it("falls back to evaluator on flop and later", () => {
+    expect(describeHandStrength(hand("Ah", "Kc"), hand("Ad", "8s", "3h"))).toBe(
+      "Pair of Aces",
+    );
+    expect(
+      describeHandStrength(hand("7c", "2s"), hand("Ah", "8s", "3h", "Kd", "2d")),
+    ).toBe("Pair of Twos");
+    expect(
+      describeHandStrength(hand("Ah", "Kh"), hand("Qh", "Jh", "Th", "2c", "3d")),
+    ).toBe("Royal Flush");
   });
 });
